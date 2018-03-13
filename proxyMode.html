@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>代理模式</title>
+    <style>
+        input{
+            width: 60px;
+            height: 40px;
+        }
+    </style>
+</head>
+<body>
+    <input type="checkbox" id="1">1
+    <input type="checkbox" id="2">2
+    <input type="checkbox" id="3">3
+    <input type="checkbox" id="4">4
+    <input type="checkbox" id="5">5
+    <input type="checkbox" id="6">6
+    <input type="checkbox" id="7">7
+    <input type="checkbox" id="8">8
+    <input type="checkbox" id="9">9
+    <input type="checkbox" id="10">10
+    <script>
+        //不用代理模式
+        var Flower=function(){};
+        var xiaoming={
+            sendFlower:function(target){
+                var flower=new Flower();
+                target.receiveFlower(flower);
+            }
+        }
+        var A={
+            receiveFlower:function(flower){
+                console.log('receive the flower !'+flower);
+            }
+        };
+        xiaoming.sendFlower(A);
+
+        //用代理模式
+        var B={
+            receiveFlower:function(flower){
+                A.receiveFlower(flower);
+            }
+        };
+        xiaoming.sendFlower(B);
+        /* B2跟A2玩得好，可以知道她什么时候心情好，再送花，这样的话小明的成功率就大增了。
+         */
+        var B2={
+            receiveFlower:function(flower){
+                A2.listenGoodMood(function(){
+                    A2.receiveFlower(flower);
+                })
+            }
+        };
+        var A2={
+            receiveFlower:function(flower){
+                console.log('receive the flower !'+flower);
+            },
+            listenGoodMood:function(fn){
+                setTimeout(function(){
+                    fn();
+                },10000);
+            }
+        };
+        xiaoming.sendFlower(B2);
+
+        /* 
+        *虚拟代理合并http请求,每点击一次就是一次网络请求，会带来很大的开销，如何解决呢？
+        *解决方案是：通过一个代理函数proxySynchromousFile来收集一段时间内的请求，最后一次性发给服务器
+        */
+        let synchronousFile=function(id){
+            console.log('开始同步文件，id为：'+id);
+        }
+        let chechbox=document.getElementsByTagName('input');
+        for(let i=0,c;c=chechbox[i++]; ){
+            c.onclick=function(){
+                if(this.checked==true){
+                    // synchronousFile(this.id);
+                    proxySynchromousFile(this.id);
+                }
+            }
+        }
+
+        let proxySynchromousFile=(function(){
+            let cache=[],
+                timer;
+            return function(id){
+                cache.push(id);
+                if(timer){
+                    return;
+                }
+                timer=setTimeout(function(){
+                    synchronousFile(cache.join(','));
+                    clearTimeout(timer);//清空定时器
+                    timer=null;
+                    cache.length=0;//清空id的集合
+                },1500);
+            }
+        })();
+        
+        /* 
+        *缓存代理
+        */
+        let mult=function(){
+            console.log('开始计算成绩...');
+            let a=1;
+            for(let i=0;i<arguments.length;i++){
+                a*=arguments[i];
+            }
+            return a;
+        };
+        console.log(mult(1,2,3));
+        console.log(mult(8,2,3));
+        //加入缓存代理
+        let proxyMult=(function(){
+            let cache={};
+            return function(){
+                let args=Array.prototype.join.call(arguments,',');
+                console.log(args);
+                if(args in cache){
+                    return cache[args];
+                }
+                return cache[args]=mult.apply(this,arguments);
+            }
+        })();
+        console.log(proxyMult(1,2,3,4,5));
+        console.log(proxyMult(1,2,3,4,5));
+        /* 
+        *用高阶函数动态创建代理：加法，乘法缓存代理
+         */
+         let plus=function(){
+             let a=0;
+             for(let i=0;i<arguments.length;i++){
+                 a+=arguments[i];
+             }
+             return a;
+         };
+         let createProxyFactory=function(fn){
+            let cache={};
+            return function(){
+                let args=Array.prototype.join.call(arguments,',');
+                if(args in cache){
+                    return cache[args];
+                }
+                return cache[args]=fn.apply(this,arguments);
+            }
+         };
+         let proxyPlus=createProxyFactory(plus);
+         console.log(proxyPlus(8,9,10));
+    </script>
+</body>
+</html>

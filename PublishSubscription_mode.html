@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>发布-订阅模式</title>
+    <style>
+        #box{
+            width: 500px;
+            height: 350px;
+            border: 2px solid #f66;
+            margin: 100px auto;
+        }
+        #count{
+            height: 50px;
+            width: 100%;
+            background: blue;
+            outline: none;
+            border:none;
+            color: #fff;
+            font-size: 28px;
+            cursor: pointer;
+            opacity: .6;
+        }
+        #count:hover{
+            opacity: 1;
+        }
+        #show{
+            height: 50px;
+            margin-top: 20px;
+            color: blue;
+            font-size: 50px;
+            font-weight: bolder;
+            text-align: center;
+            line-height:50px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="box">
+        <button id="count">click me</button>
+        <div id="show"></div>
+    </div>
+    <script>
+        var salesOffices = {};
+        salesOffices.clientList = [];
+        salesOffices.listen = function (fn) {
+            this.clientList.push(fn);
+        };
+        salesOffices.trigger = function () {
+            for (let i = 0, fn; fn = this.clientList[i++];) {
+                fn.apply(this, arguments);
+            }
+        };
+        salesOffices.listen(function (price, squreMeter) {
+            console.log("价格=" + price);
+            console.log("squreMeter=" + squreMeter);
+        })
+        salesOffices.listen(function (price, squreMeter) {
+            console.log("价格=" + price);
+            console.log("squreMeter=" + squreMeter);
+        })
+        salesOffices.trigger(200000, 100);
+        /* 
+        *订阅者收到了发布者所有信息，其实这对于信息接收者是一种干扰，如何改进呢？
+        */
+        var salesOfficesNew = {};
+        salesOfficesNew.clientList = {};
+        salesOfficesNew.listenNew = function (key, fn) {
+            if (!this.clientList[key]) {//如果还没有订阅过此类消息，给该类消息创建一个缓存列表
+                this.clientList[key] = [];
+            }
+            this.clientList[key].push(fn);//订阅的消息添加进缓存列表
+        };
+        salesOfficesNew.triggerNew = function () {//发布消息
+            var key = Array.prototype.shift.call(arguments),//取出消息类型
+                fns = this.clientList[key];//取出改消息对应的回调函数的集合
+            if (!fns || fns.length === 0) {//如果没有订阅该消息，则返回，不向此人消息
+                return false;
+            }
+            for (let i = 0, fn; fn = fns[i++];) {
+                fn.apply(this, arguments);
+            }
+        };
+        salesOfficesNew.listenNew('squreMeter88', function (price) {
+            console.log('price=' + price);
+        })
+        salesOfficesNew.listenNew('squreMeter88', function (price) {
+            console.log('price=' + price);
+        })
+        salesOfficesNew.listenNew('squreMeter100', function (price) {
+            console.log('price=' + price);
+        })
+        console.log(salesOfficesNew.clientList);
+        salesOfficesNew.triggerNew('squreMeter88', 200000);
+        salesOfficesNew.triggerNew('squreMeter100', 300000);
+
+        /* 
+        *发布-订阅模式的通用模式：
+        */
+        //把发布订阅功能单独提取出来
+        let event = {
+            clientList: [],
+            listen: function (key, fn) {
+                if (!this.clientList[key]) {
+                    this.clientList[key] = [];
+                }
+                this.clientList[key].push(fn);
+            },
+            trigger: function () {
+                var key = Array.prototype.shift.call(arguments);
+                var fns = this.clientList[key];
+                if (!fns || fns.length === 0) {
+                    return false;
+                }
+                for (let i = 0, fn; fn = fns[i++];) {
+                    fn.apply(this, arguments);
+                }
+            }
+        };
+        //给所有对象都安装动态发布-订阅功能
+        let installEvent = function (obj) {
+            for (var i in event) {
+                obj[i] = event[i];
+            }
+        }
+        let salesOfficesCommon = {};
+        installEvent(salesOfficesCommon);
+        salesOfficesCommon.listen('xiaoming_squareMeter90', function (price) {
+            console.log('the price is ' + price);
+        })
+        salesOfficesCommon.listen('xiaohong_squareMeter100', function (price) {
+            console.log('the price is ' + price);
+        })
+        salesOfficesCommon.trigger('xiaoming_squareMeter90', 300000);
+        salesOfficesCommon.trigger('xiaohong_squareMeter100', 500000);
+
+        /* 
+        *取消订阅事件
+        *
+        */
+        event.remove = function (key, fn) {
+            let fns = this.clientList[key];
+            if (!fns) {//如果key对应的消息没有人订阅，则直接返回
+                return false;
+            }
+            if (!fn) {//如果没有传入回调函数，表示需要取消key对应消息的所有订阅
+                fns && (fns.length = 0);
+            } else {
+                for (let l = fns.length - 1; l >= 0; l--) {//反向遍历订阅的回调函数列表
+                    var _fn = fns[l];
+                    if (_fn === fn) {
+                        fns.splice(l, 1);//删除订阅着的回调函数
+                    }
+                }
+            }
+        };
+        let installEventRemove = function (obj) {
+            for (var i in event) {
+                obj[i] = event[i];
+            }
+        }
+        let salesOfficesCommonRemove = {};
+        installEventRemove(salesOfficesCommonRemove);
+        salesOfficesCommonRemove.listen('remove_squreMeter8', fn1 = function (price) {//xiao  ming
+            console.log('the price is(remove Event) ' + price);
+        });
+        salesOfficesCommonRemove.listen('remove_squreMeter8', fn2 = function (price) {//xiao hong
+            console.log('the price is(remove Event) ' + price);
+        });
+        salesOfficesCommonRemove.remove('remove_squreMeter8', fn1);
+        salesOfficesCommonRemove.trigger('remove_squreMeter8', 800000);
+
+        /* 
+        *通用的全局发布-订阅对象
+        */
+        let Event = (function () {
+            let clientList = {}, listen, trigger, remove;
+            listen = function (key, fn) {
+                if (!clientList[key]) {
+                    clientList[key] = [];
+                }
+                clientList[key].push(fn);
+            };
+            trigger = function () {
+                let key = Array.prototype.shift.call(arguments),
+                    fns = clientList[key];
+                if (!fns || fns.length === 0) {
+                    return false;
+                }
+                for (let i = 0, fn; fn = fns[i++];) {
+                    fn.apply(this, arguments);
+                }
+            };
+            remove = function (key, fn) {
+                let fns = clientList[key];
+                if (!fns) {
+                    return false;
+                }
+                if (!fn) {
+                    fns && (fns.length = 0);
+                } else {
+                    for (var l = fns.length - 1; l >= 0; l--) {
+                        var _fn = fns[l];
+                        if (_fn === fn) {
+                            fns.splice(l, 1);
+                        }
+                    }
+                }
+            };
+            return {
+                listen: listen,
+                trigger: trigger,
+                remove: remove
+            }
+        })();
+
+        Event.listen("squreMeter99", function (price) {
+            console.log("commonMethods the price is:" + price);
+        })
+        Event.trigger('squreMeter99', '2亿RMB');
+
+        /* 模块间通信
+         */
+         let aa=(function(){
+             let count=0;
+             let button=document.getElementById('count');
+             button.onclick=function(){
+                 Event.trigger('add',count++);
+             }
+         })();
+         let bb=(function(){
+             let divShow=document.getElementById('show');
+             Event.listen('add',function(count){
+                 divShow.innerHTML=count;
+             })
+         })()
+
+         /* 全觉事件的命名冲突
+          */
+          Event.trigger('click',1);
+          Event.listen('click',function(a){
+              console.log(a);
+          });
+    </script>
+</body>
+
+</html>

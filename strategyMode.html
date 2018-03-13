@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>strategyMode</title>
+    <style>
+        #registerForm {
+            width: 500px;
+            height: 300px;
+            margin: 100px auto;
+            border: 1px solid #000;
+        }
+
+        form div {
+            margin: 10px 20px;
+        }
+
+        button {
+            display: inline-block;
+            width: 80px;
+            height: 40px;
+            background: #F66;
+            line-height: 40px;
+            text-align: center;
+            border: none;
+            outline: none;
+        }
+
+        input {
+            width: 150px;
+            height: 30px;
+        }
+
+        span {
+            display: inline-block;
+            width: 116px;
+            text-align: right
+        }
+    </style>
+</head>
+
+<body>
+    <form id="registerForm" method="post">
+        <div>
+            <span>请输入用户名：</span>
+            <input type="text" name="userName">
+        </div>
+        <div>
+            <span>请输入密码：</span>
+            <input type="text" name="password">
+        </div>
+        <div>
+            <span>请输入手机号：</span>
+            <input type="text" name="phoneNumber">
+        </div>
+        <button>提交</button>
+    </form>
+    <script>
+        /* 策略模式
+        *定义：定义一系列算法，把他们一个个封装起来，并且使他们可以相互替换
+         */
+        //  使用策略模式计算奖金
+        var calculateBonus = function (performanceLever, salary) {
+            if (performanceLever === 'S') {
+                return salary * 4;
+            }
+            if (performanceLever === 'A') {
+                return salary * 3;
+            }
+            if (performanceLever === 'B') {
+                return salary * 2;
+            }
+        };
+        //使用策略模式重构上面的代码(面向对象)
+        //策略类
+        var performanceS = function () { };
+        performanceS.prototype.caculate = function (salary) {
+            return salary * 4;
+        };
+        var performanceA = function () { };
+        performanceA.prototype.caculate = function (salary) {
+            return salary * 3;
+        };
+        var performanceB = function () { };
+        performanceB.prototype.caculate = function (salary) {
+            return salary * 2;
+        };
+        //奖金类
+        var bonus = function () {
+            this.salary = null;
+            this.strategy = null;
+        };
+        bonus.prototype.setSalary = function (salary) {
+            this.salary = salary;
+        };
+        bonus.prototype.setStrategy = function (strategy) {
+            this.strategy = strategy;
+        };
+        bonus.prototype.getBonus = function () {
+            return this.strategy.caculate(this.salary);
+        };
+        //调用
+        var Bonus = new bonus();
+        Bonus.setSalary(3000);
+        Bonus.setStrategy(new performanceS());
+        console.log(Bonus.getBonus());
+        Bonus.setStrategy(new performanceA());
+        console.log(Bonus.getBonus());
+
+        /* js版本的策略模式 */
+        var strategies = {
+            'S': function (salary) {
+                return salary * 4;
+            },
+            'A': function (salary) {
+                return salary * 3;
+            },
+            'B': function (salary) {
+                return salary * 2;
+            }
+        };
+        var calculateBonus = function (lever, salary) {
+            return strategies[lever](salary);
+        };
+        console.log(calculateBonus('S', 5000));
+        console.log(calculateBonus('A', 5000));
+        console.log(calculateBonus('B', 5000));
+
+        /* 策略模式在表单验证中的应用：
+         */
+         /* 最常见的代码形式，这样写的缺点：
+
+         *1：函数庞大，if else需要覆盖所有校验规则
+         *2：函数缺乏弹性，新加规则或者规则改变都需要深入函数内部改变，有违开放-封闭原则
+         *3：算法的复用性差，哪里需要就要哪里复制
+          */
+        /* var registerForm = document.getElementById('registerForm');
+        registerForm.onsubmit = function () {
+            if (registerForm.userName.value === '') {
+                alert('用户名不能为空');
+                return false;
+            }
+            if (registerForm.password.value.length < 6) {
+                alert('密码长度不能少于6位！');
+                return false;
+            }
+            if (!/^1[34578]\d{9}$/.test(registerForm.phoneNumber.value)) {
+                alert('手机号码格式不正确');
+                return false;
+            }
+        }; */
+        //用策略模式重构表单校验：有bug，还待调
+        /* *************策略对象****************** */
+        var stategiesForm={
+            isNonEmpty:function(value,errorMsg){
+                if(value===''){
+                    return errorMsg;
+                }
+            },
+            minLength:function(value,length,errorMsg){
+                if(value.length<length){
+                    return errorMsg;
+                }
+            },
+            isMobile:function(value,errorMsg){
+                if(!/^1[34578]\d{9}$/.test(registerForm.phoneNumber.value)){
+                    return errorMsg;
+                }
+            }
+        };
+        /* ****************validator类****************************** */
+        var validator=function(){
+            this.cache=[];//保存校验规则
+        };
+        validator.prototype.add=function(dom,rule,errorMsg){
+            var ary=rule.split(':');
+            this.cache.puth(function(){
+                var strategy=ary.shift();//用户挑选的strategy
+                ary.unshift(dom.value);//把input的值添加到参数列表
+                ary.push(errorMsg);//把错误提示信息添加到参数列表
+                return stategiesForm[strategy].apply(dom,ary);
+            })
+        };
+        validator.prototype.start=function(){
+            for(var i=0,validatorFunc;validatorFunc=this.cache[i++];){
+                var msg=validatorFunc();
+                if(msg){//如果有确切的返回值，说明校验没有通过
+                    return msg;
+                }
+            }
+        };
+        /* ****************客户调用代码*********************** */
+        var registerForm = document.getElementById('registerForm');
+        var validatorFunc=function(){
+            var validator=new validator();
+            validator.add(registerForm.userName,'isNonEmpty','用户名不能为空');
+            validator.add(registerForm.password,'minLength:6','密码长度不能少于6位');
+            validator.add(registerForm.phoneNumber,'isMoblie','手机号码格式不正确');
+            var errorMsg=validator.start();
+            return errorMsg;
+        };
+        registerForm.onsubmit=function(){
+            var errorMsg=validatorFunc();
+            if(errorMsg){
+                alert(errorMsg);//给出提示信息
+                return false;//阻止表单提交
+            }
+        };
+        
+        
+    </script>
+</body>
+
+</html>

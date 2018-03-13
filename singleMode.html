@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>单例模式</title>
+    <style scoped>
+        button{
+            width: 100px;
+            height: 50px;
+            background: #f66;
+            text-align: center;
+            line-height: 50px;
+            border-radius: 5px;
+            outline: none;
+            border: none;
+        }
+    </style>
+</head>
+
+<body>
+    <button id="loginBtn">Login</button>
+    <button id="loginBtnTwo">LoginTwo</button>
+    <button id="iframe">Iframe</button>
+    <iframe src="https://www.baidu.com/" frameborder="0">iframe</iframe>
+    <script>
+        /* 单例模式的定义:保证一类仅有一个实例，并提供一个访问它的全局访问点
+        *实现单例模式 ：
+        */
+        var singleTon = function (name) {
+            this.name = name;
+            this.instance = null;
+        };
+        singleTon.prototype.getName = function () {
+            console.log(this.name);
+        };
+        singleTon.getInstance = function (name) {
+            if (!this.instance) {
+                this.instance = new singleTon(name);
+            }
+            return this.instance;
+        };
+        var a = singleTon.getInstance('seven1');
+        var b = singleTon.getInstance('seven2');
+        console.log(a === b);//true
+
+        /*透明的单例模式:用户从这个类中创建对象的时候，可以像使用其他任何普通类一样。
+        *下面函数的作用是创建页面中唯一的div节点
+        */
+        var creatDiv = (function () {
+            var instance;
+            var creatDiv = function (html) {
+                if (instance) {
+                    return instance;
+                }
+                this.html = html;
+                this.init();
+                return instance = this;
+            };
+            creatDiv.prototype.init = function () {
+                var div = document.createElement('div');
+                div.innerHTML = this.html;
+                document.body.appendChild(div);
+            };
+            return creatDiv;
+        })();
+        var a1 = new creatDiv('fif1');
+        var b1 = new creatDiv('fif2');
+        console.log(a1 === b1);
+
+        /* 
+        *用代理实现单例模式
+         */
+        var creatDivNew = function (html) {
+            this.html = html;
+            this.init();
+        };
+        creatDivNew.prototype.init = function () {
+            var div = document.createElement('div');
+            div.innerHTML = this.html;
+            document.body.appendChild(div);
+        };
+        var ProxySingletonCreateDiv = (function () {
+            var instance;
+            return function (html) {
+                if (!instance) {
+                    instance = new creatDivNew(html);
+                }
+                return instance;
+            }
+        })();
+        var a2 = new ProxySingletonCreateDiv('eight1');
+        var b2 = new ProxySingletonCreateDiv('eight2');
+        console.log(a === b);
+
+        /*js中的单例模式 
+         */
+        //js中我们可以用封装私有变量的方法来减少全局变量的命名污染
+        var user = (function () {
+            var _name = 'jiao Rengui',
+                _age = 45;
+            return function () {
+                return {
+                    '_name': _name,
+                    '_age': _age
+                }
+            }
+            // return {
+            //     getUserInfo: function () {
+            //         return {
+            //             '_name': _name,
+            //             '_age': _age
+            //         }
+            //     }
+            // }
+        })();
+        // console.log(user.getUserInfo()._name);
+        console.log(user()._name);
+
+        /* 
+        *惰性单例模式 :创建一个唯一的登录浮窗
+         */
+        var createLoginLayer = (function () {
+            var div;
+            return function () {
+                if (!div) {
+                    div = document.createElement('div');
+                    div.innerHTML = 'I am the layer of Login !';
+                    div.style.display = 'none';
+                    document.body.appendChild(div);
+                }
+                return div;
+            }
+        })();
+        document.getElementById('loginBtn').onclick = function () {
+            var loginLayer = createLoginLayer();
+            loginLayer.style.display = 'block';
+        };
+        //通用的惰性单例模式：把创建对象和管理单例的职责分别写在两个函数里，提高扩展性
+        var getSingle = function (fn) {
+            var result;
+            return function () {
+                return result || (result = fn.apply(this, arguments));
+            }
+        };
+        var createLoginLayerNew = function () {
+            div = document.createElement('div');
+            div.innerHTML = '我是通用单例模式!';
+            div.style.display = 'none';
+            document.body.appendChild(div);
+            return div;
+        };
+        var creatSingleLoginLayer=getSingle(createLoginLayerNew);
+        document.getElementById('loginBtnTwo').onclick = function () {
+            var loginLayer = creatSingleLoginLayer();
+            loginLayer.style.display = 'block';
+        };
+        //代码的扩展，创建一个唯一的ifrem
+        var createSingleIframe=getSingle(function(){
+            var ifrem=document.createElement('ifrem');
+            document.body.appendChild(ifrem);
+            return ifrem;
+        });
+        document.getElementById('iframe').onclick = function () {
+            var loginLayerIfrem = createSingleIframe();
+            loginLayerIfrem.src = 'https://www.baidu.com/';
+        };
+
+        /* 
+        *总结：惰性单例技术：在合适的时候才创建对象，并且只创建唯一一个，而且是创建对象和管理单例的职责*分开，这两个方法的组合充分体现了单例模式的威力。
+         */
+    </script>
+</body>
+
+</html>

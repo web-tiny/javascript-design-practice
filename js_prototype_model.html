@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>原型模式</title>
+</head>
+
+<body>
+    <script>
+        /* 
+        js多态：其思想是把“做什么”和“怎么做” 分开。这样做就可以不动源代码，加什么需求在后面加相应代码即可。
+         */
+        let googleMap = {
+            show: function () {
+                console.log('开始渲染谷歌地图');
+            }
+        };
+        let baiduMap = {
+            show: function () {
+                console.log('开始渲染百度地图');
+            }
+        };
+        let renderMap = function (type) {
+            if (type === 'google') {
+                googleMap.show();
+            } else if (type === 'baidu') {
+                baiduMap.show();
+            }
+        };
+        renderMap('google');
+        renderMap('baidu');
+
+        let renderMapFn = function (fn) {
+            if (fn.show instanceof Function) {
+                return fn.show();
+            }
+        };
+        let sosoMap = {
+            show: function () {
+                console.log('开始渲染搜搜地图');
+            }
+        }
+        renderMapFn(sosoMap);
+        renderMapFn(googleMap);
+        renderMapFn(baiduMap);
+
+        // 封装数据，让变量变成私有变量
+        let myObject = (function () {
+            let _name = "seven";
+            return {
+                getName: function () {
+                    return _name;
+                }
+            }
+        })();
+        console.log(myObject.getName());
+        console.log(myObject._name);
+
+        //Object.create()克隆对象,Object.create(null)可以创造出没有原型的对象
+        var Plane = function () {
+            this.blood = 100;
+            this.attackLevel = 1;
+            this.defenseLevel = 2;
+        };
+        var plane = new Plane();
+        plane.blood = 500;
+        plane.attackLevel = 30;
+        plane.defenseLevel = 50;
+        var planeClone = Object.create(plane);
+        console.log(planeClone.blood);
+        console.log(planeClone.attackLevel);
+        console.log(planeClone.defenseLevel);
+        /* js的原型继承
+        js原型编程的规则：
+        1：所有的数据都是对象；
+        2：要得到一个对象，不是通过实例化类，而是找到一个对象作为原型并克隆它；
+        3：对象会记住它的原型；
+        4：如果对象无法响应某个请求，它会把这个请求委托给它自己的原型；
+         */
+        function Person(name) {
+            this.name = name;
+        }
+        Person.prototype.getName = function () {
+            return this.name;
+        }
+        var a = new Person('tiny');
+        console.log(a.name);
+        console.log(a.getName());
+        console.log(Object.getPrototypeOf(a) === Person.prototype);
+
+        var obj = { name: 'eight' };
+        var A = function () { };
+        A.prototype = obj;
+        var a = new A();
+        console.log(a.name);
+
+        var B=function(){};
+        B.prototype=new A();
+        var b=new B();
+        console.log(b.name);
+
+        // 通过class继承
+        class Animal{
+            constructor(name){
+                this.name=name;
+            }
+            getName(){
+                return this.name;
+            }
+        }
+        class Dog extends Animal{
+            constructor(name){
+                super(name);
+            }
+            speak(){
+                return 'woof';
+            }
+        }
+        var dog=new Dog("xiao Huang");
+        console.log(dog.getName()+' says '+dog.speak());
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>闭包和高阶函数</title>
+    <style>
+        div {
+            height: 40px;
+            font-size: 24px;
+            text-align: center;
+            background-color: #f66;
+            line-height: 40px;
+            margin: 1px
+        }
+
+        button {
+            width: 120px;
+            height: 50px;
+            background: blue;
+            line-height: 50px;
+            text-align: center;
+            font-size: 22px;
+        }
+    </style>
+</head>
+
+<body>
+    <div>1</div>
+    <div>2</div>
+    <div>3</div>
+    <div>4</div>
+    <div>5</div>
+
+    <button id="execute">open-TV</button>
+    <button id="undo">close-TV</button>
+    <div id="div11">惰性加载函数</div>
+    <Script>
+        var nodes = document.getElementsByTagName('div');
+        for (var i = 0, len = nodes.length; i < len; i++) {
+            (function (i) {
+                nodes[i].onclick = function () {
+                    console.log(i);
+                };
+            })(i)
+        }
+        /* 
+        *闭包的作用：
+         */
+        //1: 闭包的作用之封装变量
+        var mult = (function () {
+            var cache = {};
+            return function () {
+                var args = Array.prototype.join.call(arguments, ',');
+                if (args in cache) {
+                    return cache[args];
+                }
+                var a = 1;
+                for (var i = 0, l = arguments.length; i < l; i++) {
+                    a = a * arguments[i];
+                }
+                return cache[args] = a;
+            }
+        })();
+        // 提炼函数，将calculate函数封闭起来
+        var multGood = (function () {
+            var cache = {};
+            var calculate = function () {
+                var a = 1;
+                for (var i = 0, l = arguments.length; i < l; i++) {
+                    a = a * arguments[i];
+                }
+                return a;
+            };
+            return function () {
+                var args = Array.prototype.join.call(arguments, ',');
+                if (args in cache) {
+                    return cache[args];
+                }
+
+                return cache[args] = calculate.apply(null, arguments);
+            }
+        })()
+        console.log(mult(10, 5, 100));
+        console.log(multGood(10, 5, 100));
+
+        /* 
+        *2：延续局部变量的寿命,img是局部变量，调用后便销毁，此时可能http的请求还没发送，可能造成数据丢失
+         */
+        var report = function (src) {
+            var img = new Image();
+            img.src = src;
+        };
+
+        var reportGood = (function () {
+            var imgs = [];
+            return function () {
+                var img = new Image();
+                imgs.push(img);
+                img.src = src;
+            }
+        })();
+        /* 闭包和面向对象设计：
+        *通常用面向对象能实现的功能，用闭包也能实现
+         */
+        //  面向对象的写法：
+        var Extent = function () {
+            this.value = 0;
+        };
+        Extent.prototype.call = function () {
+            this.value++;
+            console.log(this.value);
+        };
+        var extent = new Extent();
+        extent.call();
+        extent.call();
+        extent.call();
+        // 采用闭包的写法
+        var extentClosure = function () {
+            var value = 0;
+            return {
+                call: function () {
+                    value++;
+                    console.log(value);
+                }
+            }
+        };
+        var extentClosure = extentClosure();
+        extentClosure.call();
+        extentClosure.call();
+        extentClosure.call();
+
+        /* 
+        *闭包实现命令模式
+         */
+        var TV = {
+            open: function () {
+                console.log('open the TV !');
+            },
+            close: function () {
+                console.log('close the TV !');
+            }
+        };
+        var OpenTVCommand = function (receiver) {
+            this.receiver = receiver;
+        };
+        OpenTVCommand.prototype.execute = function () {
+            this.receiver.open();
+        };
+        OpenTVCommand.prototype.undo = function () {
+            this.receiver.close();
+        };
+
+        var setCommand = function (command) {
+            document.getElementById('execute').addEventListener('click', function () {
+                command.execute();
+            })
+            document.getElementById('undo').onclick = function () {
+                command.undo();
+            }
+        };
+        setCommand(new OpenTVCommand(TV));
+
+        var createCommand = function (receiver) {
+            var execute = function () {
+                return receiver.open();
+            };
+            var undo = function () {
+                return receiver.close();
+            };
+            return {
+                execute: execute,
+                undo: undo
+            }
+        };
+        setCommand(createCommand(TV));
+
+        /* 
+        *高阶函数
+         */
+        //Array.prototype.sort
+        var sortArray = [10, 30, 1, 2, 6, 0, 40, 80, 200];
+        var sortFn = sortArray.sort(function (a, b) {
+            // return a-b;//升序
+            return b - a;//降序
+        })
+        console.log(sortFn);
+
+        /* 函数作为返回值输出 */
+        //1：判断数据的类型
+        var isString = function (obj) {
+            return Object.prototype.toString.call(obj) === '[object String]';
+        };
+        var isNumber = function (obj) {
+            return Object.prototype.toString.call(obj) === '[object Number]';
+        };
+        var isArray = function (obj) {
+            return Object.prototype.toString.call(obj) === '[object Array]';
+        };
+
+        var isType = function (type) {
+            return function (obj) {
+                return Object.prototype.toString.call(obj) === '[object' + type + ']';
+            }
+        };
+        var isStr = isType('String');
+        var isNum = isType('Number');
+        var isArr = isType('Array');
+        /* 有问题，先把这章结束再回来查看什么情况，居然全他们false */
+        console.log(isStr('jiao'));
+        console.log(isNum('23'));
+        console.log(isArr([4, 5, 1]));
+
+        //单例模式
+        var getSingle = function (fn) {
+            var ret;
+            return function () {
+                return ret || (ret = fn.apply(this, arguments));
+            }
+        };
+        var getScript = getSingle(function () {
+            return document.createElement('script');
+        });
+        var script1 = getScript();
+        var script2 = getScript();
+        console.log(script2 === script2);//true
+
+        /*高阶函数实现面向切面编程（AOP）：把一个函数动态植入到另外一个函数之中 */
+        Function.prototype.before = function (beforefn) {
+            var _self = this;
+            return function () {
+                beforefn.apply(this, arguments);
+                return _self.apply(this, arguments);
+            }
+        };
+        Function.prototype.after = function (afterfn) {
+            var _self = this;
+            return function () {
+                var ret = _self.apply(this, arguments);
+                afterfn.apply(this, arguments);
+                return ret;
+            }
+        };
+        var func = function () {
+            console.log(2);
+        };
+        func = func.before(function () {
+            console.log(1);
+        }).after(function () {
+            console.log(3);
+        });
+        func();
+
+        /* 函数的柯里化(curring) */
+        var cost = (function () {
+            var args = [];
+            return function () {
+                if (arguments.length === 0) {
+                    var money = 0;
+                    for (var i = 0, l = args.length; i < l; i++) {
+                        money += args[i];
+                    }
+                    return money;
+                } else {
+                    [].push.apply(args, arguments);
+                }
+            }
+        })();
+        cost(200);
+        cost(500);
+        cost(5000);
+        console.log(cost());//5700
+        /* curring通用函数：每天把花销保存在arg数组里，不用计算，不带参数的才计算总和 */
+        //怎么做
+        var curring = function (fn) {
+            var args = [];
+            return function () {
+                if (arguments.length === 0) {
+                    return fn.apply(this, args);
+                } else {
+                    [].push.apply(args, arguments);
+                    // return arguments.callee;
+                }
+            }
+        };
+        //具体做什么
+        var costGood = (function () {
+            var money = 0;
+            return function () {
+                for (var i = 0, l = arguments.length; i < l; i++) {
+                    money += arguments[i];
+                }
+                return money;
+            }
+        })();
+        var costGood=curring(costGood);
+        costGood(2000);
+        costGood(3000);
+        costGood(1000);
+        console.log(costGood());//6000
+
+        /* uncurring:有什么办法可以让对象去借用一个原本不属于它的方法呢？call和apply都可以解决 */
+        var obj9={
+            name:'fifteen'
+        };
+        var obj10={
+            getName:function(){
+                return this.name;
+            }
+        };
+        console.log(obj10.getName.call(obj9));
+        (function(){
+            Array.prototype.push.call(arguments,100);
+            console.log(arguments);
+        })(1,2,3,4)//[1, 2, 3, 4, 100, callee: ƒ, Symbol(Symbol.iterator): ƒ]
+
+
+        //Function.prototype.uncurring
+        Function.prototype.uncurring=function(){
+            var self=this;//self is Array.prototype.push
+            return function(){
+                var obj=Array.prototype.shift.call(arguments);
+                return self.apply(obj,arguments);//Array.prototype.push.apply(obj,XX);
+            }
+        };
+        //uncurring的另一种写法
+        /* Function.prototype.uncurring=function(){
+            var self=this; 
+            return function(){
+                return Function.prototype.call.apply(self,arguments);
+            }
+        }; */
+        var push=Array.prototype.push.uncurring();
+        (function(){
+            push(arguments,4);
+            console.log(arguments);
+        })(1,2)//[1, 2, 4, callee: ƒ, Symbol(Symbol.iterator): ƒ]
+
+        /* 函数节流：函数被触发的频率太高，导致页面卡顿，如下面三种场景：
+        1：window.onresize事件，
+        2：mousemove事件
+        3：上传进度 
+        解决办法：让被执行的函数用setTimeout延迟一段时间执行，如果该次延迟执行没有完成，则忽略接下来调用函数的请
+        */
+        var throttle=function(fn,interval){//fn延迟执行的函数，interval延迟执行的时间
+            var _self=fn,
+                timer,
+                firstTime=true;
+            return function(){
+                var args=arguments,
+                    _me=this;
+                if(firstTime){//如果是第一次调用，不需延迟执行 
+                    _self.apply(_me,args);
+                    return firstTime=false;
+                }
+                if(timer){//如果定时器还在，说明前一次延迟执行还没有完成
+                    return false;
+                }
+                timer=setTimeout(function(){
+                    clearTimeout(timer);
+                    timer=null;
+                    _self.apply(_me,args);
+                },interval || 500)
+            }
+        };
+        var throffleFn=function(){
+            console.log(1);
+        };
+        window.onresize=throttle(throffleFn,500);
+
+        /* 分时函数：当在页面同时渲染很多dom节点的时候，页面会变得卡顿，这时可以采取分批次渲染的策略 */
+        var timeChunk=function(arr,fn,count){
+            var obj,t;
+            var start=function(){
+                for(var i=0;i<Math.min(count || 1,arr.length);i++){
+                    var obj=arr.shift();
+                    fn(obj);
+                }
+            };
+            return function(){
+                t=setInterval(function(){
+                    if(arr.length===0){
+                        return clearInterval(t);
+                    }
+                    start();
+                },500)
+            }
+        };
+        var arr=[];
+        for(var i=1;i<=1000;i++){
+            arr.push(i);
+        }
+        var renderFriendList=timeChunk(arr,function(n){
+            var div=document.createElement('div');
+            div.innerHTML=n;
+            document.body.appendChild(div);
+        },8)
+        renderFriendList();
+        /* 惰性加载函数：太高级了，看不懂 */
+        var addEvent=function(elem,type,handle){
+            if(window.addEventListener){
+                addEvent=function(elem,type,handle){
+                    elem.addEventListener(type,handle,false);
+                }
+            }else if(window.attachEvent){
+                addEvent=function(elem,type,handle){
+                    elem.attachEvent('on'+type,handle);
+                }
+            }
+            addEvent(elem,type,handle);
+        }
+        var div11=document.getElementById('div11');
+        addEvent(div11,'click',function(){
+            alert(1);
+        })
+        addEvent(div11,'click',function(){
+            alert(2);
+        })
+    </Script>
+</body>
+
+</html>

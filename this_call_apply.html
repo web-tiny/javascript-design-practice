@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>this/call/apply</title>
+</head>
+<body>
+    <button id="button">Button</button>
+    <script>
+        /* shift+alt+a:vscode代码块注释
+        this:
+        1:this作为对象的方法调用:当函数作为对象的方法被调用时，this指向该对象。
+         */
+         var obj={
+             a:1,
+             getA:function(){
+                console.log(this===obj);
+                console.log(this.a);
+             }
+         };
+        obj.getA();
+        // 2:this作为普通函数调用时，总是指向全局对象
+        window.name='globleName';
+        var getName=function(){
+            return this.name;
+        }
+        console.log(getName());
+        var myObject={
+            name:'jiao',
+            getName:function(){
+                return this.name;
+            }
+        };
+        var getName=myObject.getName;
+        console.log(getName());
+        //3:this被构造器调用
+        var MyClass=function(){
+            this.name="Rengui";
+        };
+        var obj=new MyClass();
+        console.log(" 构造器调用1："+obj.name);//Rengui
+
+        var MyClass2=function(){
+            this.name="Robin";
+            return {
+                name:'JsonOne'
+            };
+        };
+        var obj2=new MyClass2();
+        console.log(" 构造器调用2，构造器显示的返回一个Object类型的对象，那结果会返回这个对象："+obj2.name);//JsonOne
+        var MyClass3=function(){
+            this.name="Ding";
+            return 'Anne';
+        };
+        var obj3=new MyClass3();
+        console.log(" 构造器调用3，构造器不显示的返回任何数据，或是返回一个非对象类型的数据："+obj3.name);//Ding
+
+        //4:Function.prototype.call or Function.prototype.apply调用
+        var obj4={
+            name:'jiang',
+            getName:function(){
+                return this.name;
+            }
+        }
+        var obj5={
+            name:'daxia'
+        };
+        console.log(obj4.getName.call(obj5));
+        console.log(obj4.getName());
+
+        /* 
+        call and apply 的用途
+         */
+         //1:改变this指向
+         document.getElementById("button").onclick=function(){
+             alert(this.id);
+             var func=function(){
+                 alert(this.id);
+             };
+            //  func();
+             func.call(this);
+         };
+        // 2: Function.prototype.bind用来指定函数内部的this指向,下面是模拟Function.prototype.bind   
+        Function.prototype.bind=function(context){
+            var self=this;
+            return function(){
+                return self.apply(context,arguments);
+            };
+        };
+        var func=function(){
+            console.log(this.name);
+        }.bind(obj5);
+        func();
+        // 3：借用其他对象的方法，使用场景之一就是“借用构造函数”来实现继承
+        var A=function(){
+            this.name=name;
+        };
+        var B=function(){
+            A.apply(this,arguments);
+        };
+        B.prototype.getName=function(){
+            return this.name;
+        };
+        var b=new B('fifting');
+        console.log(b.getName());
+    </script>
+</body>
+</html>
