@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>combination_mode</title>
+</head>
+
+<body>
+    <button id="button">万能遥控器</button>
+    <script>
+        /**@author tiny.jiao
+        * 组合模式：
+        *用途：1：表示树形结构。2：利用对象多态性统一对待组合对象和单个对象。
+        */
+        var MacroCommand = function () {
+            return {
+                commandList: [],
+                add: function (command) {
+                    this.commandList.push(command);
+                },
+                execute: function () {
+                    for (var i = 0, command; command = this.commandList[i++];) {
+                        command.execute();
+                    }
+                }
+            }
+        };
+        let openACCommand={
+            execute:function(){
+                console.log('open the air conditioning !');
+            }
+        };
+
+        /**@author电视和音响是连在一起的，用一个宏命令来组合打开
+        */
+        let openTVCommand={
+            execute:function(){
+                console.log('open the TV !');
+            }
+        };
+        let openSoundCommand={
+            execute:function(){
+                console.log('open the sound !');
+            }
+        };
+        let macroCommand1 = MacroCommand();
+        macroCommand1.add(openTVCommand);
+        macroCommand1.add(openSoundCommand);
+
+        /**@author
+        开门，打开电脑，登录qq，用一个宏命令来组合打开
+        */
+        let openDoorCommand = {
+            execute: function () {
+                console.log("open the door !");
+            }
+        };
+        let openPCCommand = {
+            execute: function () {
+                console.log("open the computer !");
+            }
+        };
+        let openQQCommand = {
+            execute: function () {
+                console.log("log in QQ");
+            },
+            add:function(){
+                throw new Error('lastNode can not add childNode !');
+            }
+
+        };
+        let macroCommand2 = MacroCommand();
+        macroCommand2.add(openDoorCommand);
+        macroCommand2.add(openPCCommand);
+        macroCommand2.add(openQQCommand);
+        // openQQCommand.add(macroCommand2);
+        /**
+        把所有命令组合一个super command
+        **/
+        let macroCommand=MacroCommand();
+        macroCommand.add(openACCommand);
+        macroCommand.add(macroCommand1);
+        macroCommand.add(macroCommand2);
+        
+        /**@author
+        给遥控器绑定超级命令
+        */
+        let setCommand=(function(command){
+            document.getElementById('button').onclick=function(){
+                command.execute();
+            }
+        })(macroCommand);
+
+        /* 透明性带来的问题是：用户可能误操作，给叶节点添加子节点，解决办法是为叶节点添加add方法，用以抛出异常提醒用户
+         */
+
+         /* 组合模式在扫描文件夹中的引用：
+          */
+          /* Folder */
+          let Folder=function(name){
+              this.name=name;
+              this.files=[];
+          };
+          Folder.prototype.add=function(file){
+              this.files.push(file)
+          };
+          Folder.prototype.scan=function(){
+              console.log('begin scan folder:'+this.name);
+              for(var i=0,file,files=this.files;file=this.files[i++];){
+                  file.scan();
+              }
+          };
+          /*File */
+          let File=function(name){
+              this.name=name;
+          };
+          File.prototype.add=function(){
+              throw new Error("It's Can not add file in the file !")
+          }
+          File.prototype.scan=function(){
+              console.log('begin scan file:'+this.name);
+          }
+          /* creat folders and files in the F*/
+          let folder=new Folder('learn data');
+          let folder1=new Folder('javascript');
+          let folder2=new Folder('jquery');
+          
+          let file1=new File('javascript design and practice !');
+          let file2=new File('how much you know jquery!');
+          let file3=new File('review and mode!');
+
+          folder1.add(file1);
+          folder2.add(file2);
+
+          folder.add(folder1);
+          folder.add(folder2);
+          folder.add(file3);
+
+          /* 需求：把移动盘里的下面这些文件复制到F盘里 */
+          var folder3=new Folder('Nodejs');
+          var file4=new File('learn deeping Nodejs !');
+          folder3.add(file4);
+
+          let file5=new File('the essence of javascript language and programming practice !');
+          folder.add(folder3);
+          folder.add(file5);
+          /* scan all folders and files */
+          folder.scan();
+    </script>
+</body>
+
+</html>
