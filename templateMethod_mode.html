@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>TemplageMethod mode</title>
+</head>
+<body>
+    <script>
+        /* 
+        *模板方法模式：是一种通过封装变化提高系统扩展性的设计模式
+        *定义：是一种使用继承就可以实现的模式
+        *组成：第一部分是抽象父类/第二部分是具体的实现子类
+         */
+         /* 先创建一个抽象父类 */
+         var Beverage=function(){};
+         Beverage.prototype.boilWater=function(){
+             console.log('把水煮沸');
+         };
+         Beverage.prototype.brew=function(){
+             throw new Error('子类必须重写brew方法');//以防要是子类没有重写父类的时候给与相应的提示
+         };
+         Beverage.prototype.pourInCup=function(){
+             throw new Error('子类必须重写pourInCup方法');
+         };
+         Beverage.prototype.addCondiments=function(){
+             throw new Error('子类必须重写addCondiments方法');
+         };
+         Beverage.prototype.init=function(){
+             this.boilWater();
+             this.brew();
+             this.pourInCup();
+             this.addCondiments();
+         };
+         /* 创建咖啡类 */
+         let Coffee=function(){};
+         Coffee.prototype=new Beverage();
+         Coffee.prototype.brew=function(){
+            console.log('用沸水冲泡咖啡！');
+         };
+         Coffee.prototype.pourInCup=function(){
+            console.log('把咖啡倒进杯子！');
+         };
+         Coffee.prototype.addCondiments=function(){
+            console.log('加糖和牛奶');
+         };
+         let coffee=new Coffee();
+         coffee.init();
+         /* 创建茶子类 */
+         let Tea=function(){};
+         Tea.prototype=new Beverage();
+         Tea.prototype.brew=function(){
+            console.log('用沸水泡茶叶！');
+         };
+         Tea.prototype.pourInCup=function(){
+            console.log('把茶倒进杯子！');
+         };
+         Tea.prototype.addCondiments=function(){
+            console.log('加柠檬');
+         };
+         let tea=new Tea();
+         tea.init();
+         /* Beverage.prototype.init就是模板方法，该方法封装了子类的算法框架，它作为一个算法的模板，
+         指导子类以何种顺序去执行哪些方法。
+         模板方法使用场景：
+         从大的方面来讲，模板方法模式常被架构师用于搭建项目的框架，架构师定好了框架的骨架，程序员
+         继承框架的结构之后，负责往里面填空
+          */
+
+        /* 不用继承来实现 */
+        let Beverage2=function(param){
+            let boilWater=function(){
+                console.log('非继承方式：把水煮沸');
+            };
+            let brew=param.brew || function(){
+                throw new Error('子类必须重写brew方法');
+            };
+            let pourInCup=param.pourInCup || function(){
+                throw new Error('子类必须重写pourInCup方法');
+            };
+            let addCondiments=param.addCondiments || function(){
+                throw new Error('子类必须重写addCondiments方法');
+            };
+            let F=function(){};
+            F.prototype.init=function(){
+                boilWater();
+                brew();
+                pourInCup();
+                addCondiments();
+            };
+            return F;
+        };
+        let Coffee2=Beverage2({
+            brew:function(){
+                console.log('非继承方式：用沸水冲泡咖啡！');
+            },
+            pourInCup:function(){
+                console.log('非继承方式：把茶倒进杯子！');
+            },
+            addCondiments:function(){
+                console.log('非继承方式：加糖和牛奶');
+            }
+        })
+        let coffee2=new Coffee2();
+        coffee2.init();
+
+        /* 
+        但是在实际开发中，我们很少这样费事的去实现一个模板方法模式，而用高阶函数来实现。
+        */
+    </script>  
+</body>
+</html>
