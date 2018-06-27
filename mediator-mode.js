@@ -32,18 +32,18 @@
  player.prototype.die = function () {
    let all_dead = true;
    this.state = 'dead';
-   for(let i = 0, partner; partner = this.partners[i++]; ) { // 遍历队友列表
-      if(partner.state !== 'dead'){ // 如果还有一个队友没有死亡，则游戏没有结束
+   for (let i = 0, partner; partner = this.partners[i++]; ) { // 遍历队友列表
+      if (partner.state !== 'dead') { // 如果还有一个队友没有死亡，则游戏没有结束
         all_dead = false;
         break;
       }
    }
-   if(all_dead === true){ // 如果队友全部死亡
+   if (all_dead === true) { // 如果队友全部死亡
     this.lose();
-    for(let i = 0,partner; partner = this.partners[i++];){
+    for (let i = 0,partner; partner = this.partners[i++];) {
       partner.lose();
     }
-    for(let i = 0,enemy; enemy = this.enimies[i++];){
+    for (let i = 0,enemy; enemy = this.enimies[i++];) {
       enemy.win();
     }
    }
@@ -51,7 +51,7 @@
 
 //  创建玩家
 let playerFactory = function (name, teamColor) {
-  let newPlayer = new player(); // create a player
+  let newPlayer = new player(name, teamColor); // create a player
   let players = [];
   for(let i, player; player = players[i++];){ // 通知所有玩家，有新角色加入
     if (player.teamColor === newPlayer.teamColor) { // 如果是同一队的玩家
@@ -59,7 +59,7 @@ let playerFactory = function (name, teamColor) {
       newPlayer.partners.push(player);
     } else {
       player.enimies.push(newPlayer);
-      newPlayer.enimies.push(newPlayer);
+      newPlayer.enimies.push(player);
     }
   }
   players.push(newPlayer);
@@ -78,7 +78,7 @@ let player5 = playerFactory('heiNiu', 'blue'),
     player7 = playerFactory('pangDun', 'blue'),
     player8 = playerFactory('haiDao', 'blue');
 
-player1.die();
-player2.die();
-player3.die();
-player4.die();
+player5.die();
+player6.die();
+player7.die();
+player8.die();
